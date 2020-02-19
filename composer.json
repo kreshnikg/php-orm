@@ -1,6 +1,6 @@
 {
     "name": "kreshnikg/php-orm",
-    "description": "Lightweight ORM (Object-Relational Mapper) library for php.",
+    "description": "Lightweight ORM (Object-Relational mapping) library for php.",
     "type": "library",
     "authors": [
         {

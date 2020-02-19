@@ -2,7 +2,7 @@
 
 namespace Database;
 
-class BaseModel
+class Model
 {
     use Relations;
     use Timestamps;
