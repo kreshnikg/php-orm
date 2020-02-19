@@ -1,0 +1,13 @@
+{
+    "name": "kreshnikg/php-orm",
+    "description": "Lightweight ORM (Object-Relational Mapper) library for php.",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Kreshnik",
+            "email": "kreshnikg3@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}
