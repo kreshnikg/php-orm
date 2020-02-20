@@ -4,7 +4,7 @@ class Model
 {
     use Relations;
     use Timestamps;
-    use Queries;
+    use Query;
 
     /**
      *  Database connection
@@ -37,18 +37,6 @@ class Model
     private $with = [];
 
     /**
-     *  Query statement
-     * @var string
-     */
-    private $query;
-
-    /**
-     *  Values to put in query parameters
-     * @var array
-     */
-    private $values = [];
-
-    /**
      *  Create new Connection instance
      * @return void
      */
@@ -64,61 +52,6 @@ class Model
     private function timestamps()
     {
         return $this->timestamps;
-    }
-
-    /**
-     * @param mixed ...$values
-     * @return void
-     */
-    private function addValue(...$values)
-    {
-        foreach ($values as $value)
-            array_push($this->values, $value);
-    }
-
-    /**
-     * Add where query
-     * @param string $column
-     * @param string $operator
-     * @param string $value
-     * @return $this
-     */
-    private function whereQuery($column, $operator, $value)
-    {
-        if (empty($this->query))
-            $this->query = "SELECT * FROM $this->table WHERE $column $operator ?";
-        else
-            $this->query .= " WHERE $column $operator ?";
-
-        $this->addValue($value);
-        return $this;
-    }
-
-    /**
-     * Add select query
-     * @param array|string $columns
-     * @return $this
-     */
-    private function selectQuery($columns)
-    {
-        $keys = $this->getKeysForSelectQuery($columns);
-        $this->query = "SELECT $keys FROM $this->table";
-        return $this;
-    }
-
-    /**
-     * Convert array to select query keys
-     * @param array|string $columns
-     * @return string
-     */
-    private function getKeysForSelectQuery($columns)
-    {
-        $keys = '';
-        if (is_array($columns))
-            $keys = implode(',', $columns);
-        else if (!is_array($columns))
-            $keys = $columns;
-        return $keys;
     }
 
     /**
@@ -185,28 +118,6 @@ class Model
     }
 
     /**
-     * Add an update query
-     * @param $columnsValues
-     * @return $this
-     */
-    private function updateQuery($columnsValues){
-        $this->query = "UPDATE $this->table SET $columnsValues";
-        return $this;
-    }
-
-    /**
-     * Convert columns to update query keys
-     * @param array $keys
-     * @return string
-     */
-    private function getKeysForUpdateQuery($keys){
-        $keysString = implode(" = ?, ", $keys) . " = ?";
-        if ($this->timestamps())
-            $keysString .= " ,$this->UPDATED_AT = " . date("d-m-Y");
-        return $keysString;
-    }
-
-    /**
      * Excecute query and convert results to array
      * @return array
      */
@@ -223,11 +134,7 @@ class Model
         return $result;
     }
 
-    public function paginate($itemsPerPage, $currentPage)
-    {
-        $this->query .= " LIMIT $itemsPerPage OFFSET $currentPage";
-        return $this;
-    }
+    public function paginate($itemsPerPage, $currentPage){}
 
     /**
      *  Find model on database with id
@@ -256,16 +163,6 @@ class Model
         $INSTANCE->deleteQuery()->where($INSTANCE->primaryKey, '=', $id);
         $INSTANCE->excecuteQuery();
         return "success";
-    }
-
-    /**
-     * Add a delete query
-     * @return $this
-     */
-    private function deleteQuery()
-    {
-        $this->query = "DELETE FROM $this->table";
-        return $this;
     }
 
     /**
