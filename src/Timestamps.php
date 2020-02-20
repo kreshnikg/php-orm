@@ -1,7 +1,5 @@
 <?php
 
-namespace Database;
-
 trait Timestamps {
     /**
      * Field name for insertion timestamp

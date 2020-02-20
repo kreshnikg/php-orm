@@ -1,7 +1,5 @@
 <?php
 
-namespace Database;
-
 class Connection {
     private $server = "localhost";
     private $user = "root";

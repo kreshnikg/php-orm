@@ -1,7 +1,5 @@
 <?php
 
-namespace Database;
-
 trait Relations {
 
     /**
@@ -56,9 +54,13 @@ trait Relations {
             $models = $model->get();
             foreach($result as $res){
                 $name = $model->table;
-                $res->$name = current(array_filter($models, function ($mdl) use ($res, $localKey,$foreginKey) {
+                $relatedModel = array_filter($models, function ($mdl) use ($res, $localKey,$foreginKey) {
                     return $res->$localKey == $mdl->$foreginKey;
-                }));
+                });
+                if($relation["type"] == "hasOne")
+                    $res->$name = current($relatedModel);
+                else if($relation["type"] == "hasMany")
+                    $res->$name = $relatedModel;
             }
         }
     }
@@ -68,6 +70,7 @@ trait Relations {
      * @param string $model
      * @param string $foreignKey
      * @param string $localKey
+     * @return void
      */
     public function hasOne($model, $foreignKey = null, $localKey = null)
     {
@@ -84,6 +87,7 @@ trait Relations {
      * @param string $model
      * @param string $foreignKey
      * @param string $localKey
+     * @return void
      */
     public function hasMany($model, $foreignKey = null, $localKey = null)
     {

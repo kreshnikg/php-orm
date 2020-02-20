@@ -1,11 +1,10 @@
 <?php
 
-namespace Database;
-
 class Model
 {
     use Relations;
     use Timestamps;
+    use Queries;
 
     /**
      *  Database connection
@@ -73,12 +72,12 @@ class Model
      */
     private function addValue(...$values)
     {
-        foreach ($values as $value) {
+        foreach ($values as $value)
             array_push($this->values, $value);
-        }
     }
 
     /**
+     * Add where query
      * @param string $column
      * @param string $operator
      * @param string $value
@@ -86,27 +85,40 @@ class Model
      */
     private function whereQuery($column, $operator, $value)
     {
-        if (empty($this->query)) {
+        if (empty($this->query))
             $this->query = "SELECT * FROM $this->table WHERE $column $operator ?";
-        } else {
+        else
             $this->query .= " WHERE $column $operator ?";
-        }
+
         $this->addValue($value);
         return $this;
     }
 
     /**
+     * Add select query
      * @param array|string $columns
      * @return $this
      */
     private function selectQuery($columns)
     {
-        if (is_array($columns)) {
-            $columnsString = implode(',', $columns);
-        } else if (!is_array($columns))
-            $columnsString = $columns;
-        $this->query = "SELECT $columnsString FROM $this->table";
+        $keys = $this->getKeysForSelectQuery($columns);
+        $this->query = "SELECT $keys FROM $this->table";
         return $this;
+    }
+
+    /**
+     * Convert array to select query keys
+     * @param array|string $columns
+     * @return string
+     */
+    private function getKeysForSelectQuery($columns)
+    {
+        $keys = '';
+        if (is_array($columns))
+            $keys = implode(',', $columns);
+        else if (!is_array($columns))
+            $keys = $columns;
+        return $keys;
     }
 
     /**
@@ -164,9 +176,9 @@ class Model
 
         $keysString = $INSTANCE->getKeysForUpdateQuery(array_keys($data));
 
-        foreach ($data as $key => $value) {
+        foreach ($data as $key => $value)
             $INSTANCE->addValue($value);
-        }
+
         $INSTANCE->updateQuery($keysString)->where($INSTANCE->primaryKey, '=', $id);
         $INSTANCE->excecuteQuery();
         return "success";
@@ -189,9 +201,8 @@ class Model
      */
     private function getKeysForUpdateQuery($keys){
         $keysString = implode(" = ?, ", $keys) . " = ?";
-        if ($this->timestamps()) {
+        if ($this->timestamps())
             $keysString .= " ,$this->UPDATED_AT = " . date("d-m-Y");
-        }
         return $keysString;
     }
 
@@ -203,13 +214,11 @@ class Model
     {
         $results = $this->excecuteQuery();
         $result = array();
-        while ($res = $results->fetch_object()) {
+        while ($res = $results->fetch_object())
             array_push($result, $res);
-        }
 
-        if($this->hasRelations()){
+        if($this->hasRelations())
             $this->addRelationDataToResult($result);
-        }
 
         return $result;
     }
@@ -230,9 +239,9 @@ class Model
         $INSTANCE = new static;
         $INSTANCE->whereQuery($INSTANCE->primaryKey, '=', $id);
         $result = $INSTANCE->excecuteQuery()->fetch_object();
-        if ($result === null) {
+        if ($result === null)
             response(get_class($INSTANCE) . ' nuk u gjet', 404);
-        }
+
         return $result;
     }
 
@@ -266,7 +275,6 @@ class Model
     public function save()
     {
         $thisArray = get_object_vars($this);
-        // Merri te gjitha atributet dinamike te instances perveq atributeve ndihmese
         $data = filterVars($thisArray);
         $keys = array_keys($data);
         $values = array_values($data);
@@ -284,16 +292,16 @@ class Model
     }
 
     /**
-     * Order query
+     * Add order query
      * @param $column
      * @param string $order = "ASC|DESC"
      * @return $this
      */
     public function orderBy($column, $order = 'ASC')
     {
-        if (($order == 'ASC' || $order == 'DESC') && $this->query != "") {
+        if (($order == 'ASC' || $order == 'DESC') && $this->query != "")
             $this->query .= " ORDER BY $column $order";
-        }
+
         return $this;
     }
 
@@ -308,20 +316,18 @@ class Model
 
     public function __call($function, $arguments)
     {
-        if ($function == 'where') {
+        if ($function == 'where')
             return $this->whereQuery($arguments[0], $arguments[1], $arguments[2]);
-        } else if ($function == 'select') {
+        else if ($function == 'select')
             return $this->selectQuery($arguments[0]);
-        }
     }
 
     public static function __callStatic($function, $arguments)
     {
         $INSTANCE = new static;
-        if ($function == 'where') {
+        if ($function == 'where')
             return $INSTANCE->whereQuery($arguments[0], $arguments[1], $arguments[2]);
-        } else if ($function == 'select') {
+        else if ($function == 'select')
             return $INSTANCE->selectQuery($arguments[0]);
-        }
     }
 }
