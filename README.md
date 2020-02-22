@@ -7,6 +7,7 @@ Lightweight ORM (Object-relational mapping) library for php.
 * [Features](#features)
 * [Requirements](#requirements)
 * [Installation](#installation)
+* [Usage](#usage)
 
 ## Features
 * 
