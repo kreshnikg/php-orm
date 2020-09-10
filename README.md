@@ -1,6 +1,6 @@
-# php-orm
+# Fluently
 
-Lightweight ORM (Object-relational mapping) library for php.
+Write SQL queries, fluently.
 
 # Contents
 
