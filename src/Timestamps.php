@@ -1,5 +1,6 @@
 <?php
 
+
 trait Timestamps {
     /**
      * Field name for insertion timestamp

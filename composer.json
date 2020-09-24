@@ -1,5 +1,5 @@
 {
-    "name": "kreshnikg/php-orm",
+    "name": "kreshnikg/fluently",
     "description": "Lightweight ORM (Object-Relational mapping) library for php.",
     "type": "library",
     "authors": [

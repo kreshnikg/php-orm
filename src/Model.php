@@ -1,34 +1,35 @@
 <?php
 
+
 class Model
 {
     use Relations;
-    use Timestamps;
     use Query;
+    use Timestamps;
 
     /**
-     *  Database connection
+     * Database connection
      * @var Connection
      */
     private $connection;
 
     /**
-     *  Table name
+     * Table name
      * @var string
      */
     protected $table;
 
     /**
-     *  Table primary key
+     * Table primary key
      * @var int
      */
     protected $primaryKey;
 
     /**
-     *  Table timestamps
+     * Table timestamps
      * @var boolean
      */
-    public $timestamps = false;
+    protected $timestamps = true;
 
     /**
      * The relations to load on every query
@@ -37,7 +38,7 @@ class Model
     private $with = [];
 
     /**
-     *  Create new Connection instance
+     * Create new Connection instance
      * @return void
      */
     public function __construct()
@@ -49,42 +50,14 @@ class Model
      * Get timestamps value
      * @return boolean
      */
-    private function timestamps()
+    public function timestamps()
     {
         return $this->timestamps;
     }
 
     /**
-     * @return false|\mysqli_result
-     */
-    private function excecuteQuery()
-    {
-        $cnn = $this->connection->open();
-        $query = $cnn->prepare($this->query);
-        $values = $this->values;
-        if ($query) {
-            if (count($values) > 0) {
-                $types = dataTypesToString($values);
-                $query->bind_param($types, ...$values);
-            }
-            $query->execute();
-        } else {
-            $error = $cnn->error;
-            $this->connection->close();
-            response($error,500);
-        }
-        $results = $query->get_result();
-        $this->connection->close();
-        return $results;
-    }
-
-    public static function raw($query)
-    {
-
-    }
-
-    /**
      * Get model with relationships for every query
+     *
      * @param array $relations
      * @return self
      */
@@ -98,46 +71,42 @@ class Model
     }
 
     /**
-     *  Update model on database
+     * Update model on database
+     *
      * @param int $id
-     * @param object $data
-     * @return string
+     * @param array|object $data
+     * @return integer
      */
     public static function update($id, $data)
     {
         $INSTANCE = new static;
-
-        $keysString = $INSTANCE->getKeysForUpdateQuery(array_keys($data));
-
-        foreach ($data as $key => $value)
-            $INSTANCE->addValue($value);
-
-        $INSTANCE->updateQuery($keysString)->where($INSTANCE->primaryKey, '=', $id);
-        $INSTANCE->excecuteQuery();
-        return "success";
+        $INSTANCE->updateQuery($data)->where($INSTANCE->primaryKey, '=', $id);
+        return $INSTANCE->excecuteQuery();
     }
 
     /**
-     * Excecute query and convert results to array
+     * Excecute query and convert results to array.
+     *
      * @return array
      */
     public function get()
     {
         $results = $this->excecuteQuery();
         $result = array();
-        while ($res = $results->fetch_object())
+        while ($res = $results->fetch_object()) {
             array_push($result, $res);
+        }
 
-        if($this->hasRelations())
+        if($this->hasRelations()){
             $this->addRelationDataToResult($result);
+        }
 
         return $result;
     }
 
-    public function paginate($itemsPerPage, $currentPage){}
-
     /**
      *  Find model on database with id
+     *
      * @param int $id
      * @return object
      */
@@ -146,64 +115,89 @@ class Model
         $INSTANCE = new static;
         $INSTANCE->whereQuery($INSTANCE->primaryKey, '=', $id);
         $result = $INSTANCE->excecuteQuery()->fetch_object();
-        if ($result === null)
+        if ($result === null) {
             response(get_class($INSTANCE) . ' nuk u gjet', 404);
-
+        }
         return $result;
     }
 
     /**
-     *  Delete model on database
-     * @param int $id
-     * @return string
+     * Add where in query
+     *
+     * @param string $column
+     * @param array $values
+     * @return $this
      */
-    public static function delete($id)
+    public function whereIn($column, $values)
     {
-        $INSTANCE = new static;
-        $INSTANCE->deleteQuery()->where($INSTANCE->primaryKey, '=', $id);
-        $INSTANCE->excecuteQuery();
-        return "success";
+        return $this->whereInQuery($column,$values);
     }
 
     /**
-     *  Save model on database
-     * @return string
+     *  Delete model on database based on primaryKey.
+     *
+     * @param int $id
+     */
+    public static function destroy($id)
+    {
+        $INSTANCE = new static;
+        $INSTANCE->deleteQuery()->where($INSTANCE->primaryKey, '=', $id)->excecuteQuery();
+    }
+
+    /**
+     * Delete model on database on a condition.
+     *
+     * @param string $column
+     * @param string $operator
+     * @param mixed $value
+     */
+    public static function deleteWhere($column,$operator,$value)
+    {
+        $INSTANCE = new static;
+        $INSTANCE->deleteQuery()->where($column, $operator, $value)->excecuteQuery();
+    }
+
+    /**
+     * Save model on database.
+     * Returns the inserted model id.
+     *
+     * @return integer
      */
     public function save()
     {
         $thisArray = get_object_vars($this);
         $data = filterVars($thisArray);
-        $keys = array_keys($data);
-        $values = array_values($data);
-        if ($this->timestamps()) {
-            array_push($keys, $this->CREATED_AT, $this->UPDATED_AT);
-            $date = date("d-m-Y");
-            array_push($values, $date, $date);
-        }
-        $this->addValue(...$values);
-        $keysString = implode(",", $keys);
-        $paramSymbols = str_repeat('?,', count($keys) - 1) . '?';
-        $this->query = "INSERT INTO $this->table ($keysString) VALUES ($paramSymbols); ";
-        $this->excecuteQuery();
-        return "success";
+        return $this->insert($data);
     }
 
     /**
-     * Add order query
+     * Insert model data on database
+     *
+     * @param array|object $data
+     * @return string
+     */
+    private function insert($data){
+        $keys = array_keys($data);
+        $values = array_values($data);
+        return $this->insertQuery($keys,$values)->excecuteQuery();
+    }
+
+    /**
+     * Add an order query
+     *
      * @param $column
      * @param string $order = "ASC|DESC"
      * @return $this
      */
     public function orderBy($column, $order = 'ASC')
     {
-        if (($order == 'ASC' || $order == 'DESC') && $this->query != "")
-            $this->query .= " ORDER BY $column $order";
-
+        $this->orderQuery($column,$order);
         return $this;
     }
 
     /**
-     *  Get all records of model on database
+     *  Get all records of model on database.
+     *
      * @return array
      */
     public static function all()
@@ -211,20 +205,53 @@ class Model
         return self::select('*')->get();
     }
 
+    /**
+     * Get the first record of model on database.
+     *
+     * @return $this
+     */
+    public function first()
+    {
+        return current($this->limitQuery(1)->get());
+    }
+
+    /**
+     * Get the last record of model on database.
+     *
+     * @return $this
+     */
+    public function last()
+    {
+        return current($this->orderBy($this->primaryKey, "DESC")->limitQuery(1)->get());
+    }
+
     public function __call($function, $arguments)
     {
-        if ($function == 'where')
+        if ($function == 'where') {
             return $this->whereQuery($arguments[0], $arguments[1], $arguments[2]);
-        else if ($function == 'select')
+        } else if ($function == 'select') {
             return $this->selectQuery($arguments[0]);
+        }
     }
 
     public static function __callStatic($function, $arguments)
     {
         $INSTANCE = new static;
-        if ($function == 'where')
+        if ($function == 'where') {
             return $INSTANCE->whereQuery($arguments[0], $arguments[1], $arguments[2]);
-        else if ($function == 'select')
+        } else if ($function == 'select') {
             return $INSTANCE->selectQuery($arguments[0]);
+        }
     }
+
+    public static function raw($query){
+        $INSTANCE = new self;
+        $INSTANCE->query = $query;
+        if(strpos(strtolower($query),"select") !== false)
+            return $INSTANCE->get();
+        else
+            return $INSTANCE->excecuteQuery();
+    }
+
+    public function paginate($itemsPerPage){}
 }
